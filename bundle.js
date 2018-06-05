@@ -156,7 +156,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 window.BASE_PATH = '';
 if (process.env.NODE_ENV === 'production') {
-  window.BASE_PATH = '/4afc/';
+  window.BASE_PATH = '/after-image-v1/';
 }
 var helpers = require('./helpers');
 
@@ -655,7 +655,6 @@ window.loadConfig(function (err, res) {
   WHITE = res.WHITE;
   BACKGROUND_GREY = res.BACKGROUND_GREY;
   RGB_TEST_VALUES = res.RGB_TEST_VALUES;
-
   setTestTimings();
   getScreenSize();
   drawCanvas();

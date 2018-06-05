@@ -41,8 +41,13 @@
   </div>
   <canvas id="myCanvas"></canvas>
   <textarea id="output" class="output"></textarea>
+</body>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/10.1.0/nouislider.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/color-js/1.0.1/color.min.js"></script>
-</body>
+  <%if (process.env.NODE_ENV==="production") { %>
+      <script src="/after-image-v1/bundle.js"></script>
+  <% }else{ %>
+      <script src="bundle.js"></script>
+  <%} %>
 
 </html>
