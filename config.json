@@ -1,0 +1,12 @@
+{
+  "STARE_DURATION": 30000,
+  "MATCH_DURATION": 5000,
+  "RESET_DURATION": 15000,
+  "BACKGROUND_GREY": [128, 128, 128],
+  "RGB_TEST_VALUES": [
+    [255, 87, 87],
+    [255, 87, 87],
+    [255, 87, 87],
+    [255, 87, 87]
+  ]
+}
