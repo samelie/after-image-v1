@@ -345,6 +345,7 @@ function drawCanvas() {
   var testObject = _testSequence[_testIndex];
   //short hand access
   var isMatchingMode = testObject.isMatchingMode;
+  var isResetingMode = testObject.isResetingMode;
   /*
     Wipe the canvas
     */
@@ -353,67 +354,69 @@ function drawCanvas() {
   /*
     Backgrround color
     */
+
   ctx.fillStyle = 'rgb(' + BACKGROUND_GREY.join(',') + ')';
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  if (!isResetingMode) {
+    ctx.strokeStyle = 'rgb(0,0,0)';
+    ctx.lineWidth = 1;
 
-  ctx.strokeStyle = 'rgb(0,0,0)';
-  ctx.lineWidth = 1;
+    /*
+      Left circle
+      */
+    ctx.beginPath();
+    ctx.arc(leftCIrcleX, window.innerHeight / 2, radius, 0.5 * Math.PI, 1.5 * Math.PI, false);
+    ctx.closePath();
+    ctx.fillStyle = 'rgb(' + testObject.leftCircleRGB.join(',') + ')';
+    ctx.fill();
+    ctx.stroke();
 
-  /*
-    Left circle
-    */
-  ctx.beginPath();
-  ctx.arc(leftCIrcleX, window.innerHeight / 2, radius, 0.5 * Math.PI, 1.5 * Math.PI, false);
-  ctx.closePath();
-  ctx.fillStyle = 'rgb(' + testObject.leftCircleRGB.join(',') + ')';
-  ctx.fill();
-  ctx.stroke();
+    /*
+      Right circle
+      */
+    ctx.beginPath();
+    ctx.arc(leftCIrcleX, window.innerHeight / 2, radius, 0.5 * Math.PI, 1.5 * Math.PI, true);
+    ctx.closePath();
+    if (isMatchingMode) {
+      ctx.fillStyle = userColorRGB();
+    } else {
+      ctx.fillStyle = 'rgb(' + testObject.rightCircleRGB.join(',') + ')';
+    }
+    ctx.fill();
+    ctx.stroke();
 
-  /*
-    Right circle
-    */
-  ctx.beginPath();
-  ctx.arc(leftCIrcleX, window.innerHeight / 2, radius, 0.5 * Math.PI, 1.5 * Math.PI, true);
-  ctx.closePath();
-  if (isMatchingMode) {
-    ctx.fillStyle = userColorRGB();
-  } else {
-    ctx.fillStyle = 'rgb(' + testObject.rightCircleRGB.join(',') + ')';
-  }
-  ctx.fill();
-  ctx.stroke();
-
-  /*
+    /*
     Focus circle
     */
-  var remappedTime = now * 0.002;
-  ctx.setLineDash([]);
-  ctx.beginPath();
-  var _cos = Math.abs(Math.cos(remappedTime));
-  var _sin = Math.abs(Math.sin(remappedTime));
-  var _tan = Math.atan(_sin / _cos);
-  if (ctx.ellipse) {
-    ctx.ellipse(
-      leftCIrcleX, //x
-      window.innerHeight / 2, //y
-      _cos * 2.5 + 2.5, //radiusX
-      _sin * 2.5 + 2.5, //radiusY
-      45 * Math.PI / 180,
-      0,
-      2 * Math.PI,
-    );
-  } else {
-    ctx.arc(
-      leftCIrcleX, //x
-      window.innerHeight / 2, //y
-      _cos * 0.5 + 4.5,
-      0,
-      2 * Math.PI,
-      true,
-    );
+    var remappedTime = now * 0.002;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    var _cos = Math.abs(Math.cos(remappedTime));
+    var _sin = Math.abs(Math.sin(remappedTime));
+    var _tan = Math.atan(_sin / _cos);
+    if (ctx.ellipse) {
+      ctx.ellipse(
+        leftCIrcleX, //x
+        window.innerHeight / 2, //y
+        _cos * 2.5 + 2.5, //radiusX
+        _sin * 2.5 + 2.5, //radiusY
+        45 * Math.PI / 180,
+        0,
+        2 * Math.PI,
+      );
+    } else {
+      ctx.arc(
+        leftCIrcleX, //x
+        window.innerHeight / 2, //y
+        _cos * 0.5 + 4.5,
+        0,
+        2 * Math.PI,
+        true,
+      );
+    }
+    ctx.fillStyle = 'rgb(0,0,0)';
+    ctx.fill();
   }
-  ctx.fillStyle = 'rgb(0,0,0)';
-  ctx.fill();
 
   /*
     Check timings
@@ -472,8 +475,8 @@ function captureData(testObject) {
     timestamp: date,
   });
 
-  downloadEl.style.visibility = 'visible';
-  console.log(OUTPUT_DATA);
+  // downloadEl.style.visibility = 'visible';
+  // console.log(OUTPUT_DATA);
 }
 
 window.addEventListener('resize', function(e) {

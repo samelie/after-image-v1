@@ -10,7 +10,8 @@
     "build:js:prod": "NODE_ENV=production browserify index.js > bundle.js",
     "build:html": "ejs-cli index.ejs > index.html",
     "build": "npm-run-all -s -l build:html build:js",
-    "build:prod": "NODE_ENV=production npm-run-all -s -l build:html build:js:prod"
+    "build:prod": "NODE_ENV=production npm-run-all -s -l build:html build:js:prod",
+    "precommit": "npm run build:prod"
   },
   "keywords": [],
   "author": "",
@@ -31,8 +32,18 @@
   },
   "browserify": {
     "transform": [
-      [ "babelify", { "presets": [ "env" ], "plugins": "transform-object-rest-spread" } ],
-      [ "envify" ]
+      [
+        "babelify",
+        {
+          "presets": [
+            "env"
+          ],
+          "plugins": "transform-object-rest-spread"
+        }
+      ],
+      [
+        "envify"
+      ]
     ]
   },
   "devDependencies": {
@@ -42,6 +53,7 @@
     "babelify": "8.0.0",
     "ejs-cli": "2.0.1",
     "envify": "4.1.0",
+    "husky": "^0.14.3",
     "npm-run-all": "4.1.2",
     "watchify": "3.11.0"
   }
