@@ -15,6 +15,20 @@ c.height = window.innerHeight;
 var ColorLibrary = net.brehaut.Color;
 var ctx = c.getContext('2d');
 
+var testsEl = document.querySelector('.tests');
+testsEl.style.display = 'none';
+var testBtn = document.querySelector('.test-btn');
+testBtn.addEventListener('click', e => {
+  testsEl.style.display = testsEl.style.display === 'block' ? 'none' : 'block';
+});
+const createTestButton = name => {
+  const el = document.createElement('button');
+  el.setAttribute('value', name);
+  el.innerText = name;
+  testsEl.appendChild(el);
+  return el;
+};
+
 //**************
 /// MATCHING COLOR
 //**************
@@ -156,13 +170,16 @@ function downloadCSV(obj) {
   });
   if (csv == null) return;
   var date = new Date();
-  date.toLocaleString('en-us', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  date.toLocaleString(
+    'en-us',
+    {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    },
+  );
 
   outputDumpEl.style.display = 'block';
   outputDumpEl.innerHTML = csv;
@@ -261,60 +278,76 @@ function updateOutput() {
 //***********
 // SETUP FROM CONFIG.JSON
 //***********
-var STARE_DURATION = 3000;
-var MATCH_DURATION = 3000;
-var RESET_DURATION = 0;
-var WHITE = [255, 255, 255];
-var BACKGROUND_GREY = [128, 128, 128];
-var RGB_TEST_VALUES = [[255, 87, 87], [255, 87, 87], [255, 87, 87], [255, 87, 87]];
+let tests = [];
+let testNumber = 0;
+let activeTest;
+
 var OUTPUT_DATA = [];
 
 //***********
 // internal variables
 //***********
+var _paused = false;
 var _testIndex = 0;
 var _testSequence = [];
+
+
+function resetTest(){
+  _testSequence.length = 0;
+  _testIndex = 0;
+}
+
+function beginTest(){
+  _paused = false
+  setTestTimings();
+  getScreenSize();
+  drawCanvas();
+}
+
+function pauseTest(){
+  _paused = true
+}
 
 //***********
 // internal setup function
 //***********
 function setTestTimings() {
   var _time = 0;
-  RGB_TEST_VALUES.forEach(function(_, i) {
-    _time += STARE_DURATION;
+  activeTest.RGB_TEST_VALUES.forEach(function(_, i) {
+    _time += activeTest.STARE_DURATION;
     /*
       Testing testObject
       */
     _testSequence.push({
       endTime: _time,
-      leftCircleRGB: RGB_TEST_VALUES[i],
-      leftCircleHSL: rgbToHSL(...RGB_TEST_VALUES[i]),
-      rightCircleRGB: BACKGROUND_GREY,
+      leftCircleRGB: activeTest.RGB_TEST_VALUES[i],
+      leftCircleHSL: rgbToHSL(...activeTest.RGB_TEST_VALUES[i]),
+      rightCircleRGB: activeTest.BACKGROUND_GREY,
       isMatchingMode: false,
     });
 
-    _time += MATCH_DURATION;
+    _time += activeTest.MATCH_DURATION;
     /*
       Matching testObject
       */
     _testSequence.push({
       endTime: _time,
-      leftCircleRGB: WHITE,
-      rightCircleRGB: WHITE, // will be overwritten by UserColor
+      leftCircleRGB: activeTest.WHITE,
+      rightCircleRGB: activeTest.WHITE, // will be overwritten by UserColor
       isMatchingMode: true,
     });
 
-    _time += RESET_DURATION;
+    _time += activeTest.RESET_DURATION;
 
-    if (RESET_DURATION) {
+    if (activeTest.RESET_DURATION) {
       /*
       RESET
       reset testObject
       */
       _testSequence.push({
         endTime: _time,
-        leftCircleRGB: BACKGROUND_GREY,
-        rightCircleRGB: BACKGROUND_GREY,
+        leftCircleRGB: activeTest.BACKGROUND_GREY,
+        rightCircleRGB: activeTest.BACKGROUND_GREY,
         isResetingMode: true,
         isMatchingMode: false,
       });
@@ -334,10 +367,13 @@ var _timeElapsed = performance.now();
 
 function drawCanvas() {
   var now = performance.now();
+  if(_paused) return
   //check to see if completed, anc cancek out if so
   if (_testIndex > _testSequence.length - 1) {
     testCompleteEl.style.visibility = 'visible';
     outputItemsEl.style.visibility = 'visible';
+    resetTest()
+    pauseTest()
     return;
   }
 
@@ -355,7 +391,7 @@ function drawCanvas() {
     Backgrround color
     */
 
-  ctx.fillStyle = 'rgb(' + BACKGROUND_GREY.join(',') + ')';
+  ctx.fillStyle = 'rgb(' + activeTest.BACKGROUND_GREY.join(',') + ')';
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   if (!isResetingMode) {
     ctx.strokeStyle = 'rgb(0,0,0)';
@@ -400,7 +436,7 @@ function drawCanvas() {
         window.innerHeight / 2, //y
         _cos * 2.5 + 2.5, //radiusX
         _sin * 2.5 + 2.5, //radiusY
-        45 * Math.PI / 180,
+        (45 * Math.PI) / 180,
         0,
         2 * Math.PI,
       );
@@ -444,14 +480,17 @@ function drawCanvas() {
 
 function captureData(testObject) {
   var date = new Date();
-  date.toLocaleString('en-us', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  date.toLocaleString(
+    'en-us',
+    {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    },
+  );
   OUTPUT_DATA.push({
     Test_Type: 'AF',
     R: testObject.leftCircleRGB[0],
@@ -515,15 +554,17 @@ bSliderEl.noUiSlider.on('update', function(values) {
 });
 
 window.loadConfig((err, res) => {
-  STARE_DURATION = res.STARE_DURATION;
-  USE_HSL = res.USE_HSL;
-  STARE_DURATION = res.STARE_DURATION;
-  MATCH_DURATION = res.MATCH_DURATION;
-  RESET_DURATION = res.RESET_DURATION;
-  WHITE = res.WHITE;
-  BACKGROUND_GREY = res.BACKGROUND_GREY;
-  RGB_TEST_VALUES = res.RGB_TEST_VALUES;
-  setTestTimings();
-  getScreenSize();
-  drawCanvas();
+  tests = [...res];
+  activeTest = tests[testNumber];
+  const btns = tests.map((_, i) => createTestButton(`test ${i + 1}`));
+  btns.forEach((btn, i) =>
+    btn.addEventListener('click', function(e) {
+      testNumber = i
+      activeTest = tests[testNumber];
+      pauseTest()
+      resetTest()
+      beginTest()
+    }),
+  );
+  beginTest()
 });

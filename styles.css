@@ -100,3 +100,14 @@ canvas {
 .info--data {
   margin-left: 6px;
 }
+
+
+.test-btn{
+  padding: 1em;
+  cursor: pointer;
+}
+.test-wrapper{
+  position: absolute;
+  left: 0;
+  top: 0;
+}
