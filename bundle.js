@@ -148,13 +148,14 @@ window.loadConfig = function (cb) {
   xhr(window.BASE_PATH + 'config.json', { json: true }, cb);
 };
 
-},{"xhr-request":14}],2:[function(require,module,exports){
+},{"xhr-request":15}],2:[function(require,module,exports){
+(function (process){
 'use strict';
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 window.BASE_PATH = '';
-if ("production" === 'production') {
+if (process.env.NODE_ENV === 'production') {
   window.BASE_PATH = '/after-image-v1/';
 }
 var helpers = require('./helpers');
@@ -162,6 +163,7 @@ var helpers = require('./helpers');
 //get output div by its class
 var outputDumpEl = document.querySelector('#output');
 outputDumpEl.style.display = 'none';
+var outputSlidersEl = document.querySelector('.output-sliders');
 var outputEl = document.querySelector('.output');
 var c = document.getElementById('myCanvas');
 c.width = window.innerWidth;
@@ -172,10 +174,12 @@ var ctx = c.getContext('2d');
 
 var testsEl = document.querySelector('.tests');
 testsEl.style.display = 'none';
+
 var testBtn = document.querySelector('.test-btn');
 testBtn.addEventListener('click', function (e) {
   testsEl.style.display = testsEl.style.display === 'block' ? 'none' : 'block';
 });
+
 var createTestButton = function createTestButton(name) {
   var el = document.createElement('button');
   el.setAttribute('value', name);
@@ -188,12 +192,17 @@ var createTestButton = function createTestButton(name) {
 /// MATCHING COLOR
 //**************
 
+var HIDE_SLIDERS = true;
 var USE_HSL = false;
 var SLIDER_START_VALUES = [USE_HSL ? 180 : Math.round(0.999 * 255), USE_HSL ? 0.5 : Math.round(0.999 * 255), USE_HSL ? 0.5 : Math.round(0.999 * 255)];
 
 var UserColor = ColorLibrary([SLIDER_START_VALUES[0], SLIDER_START_VALUES[1], SLIDER_START_VALUES[2]]);
 if (USE_HSL) {
   UserColor = UserColor.toHSL();
+}
+
+if (HIDE_SLIDERS) {
+  outputSlidersEl.style.display = 'none';
 }
 
 //**************
@@ -352,7 +361,7 @@ var CIRCLE_RADIUS_DEVISOR = 3;
 
 function getScreenSize() {
   radius = Math.min(Math.min(window.innerWidth, window.innerHeight) / CIRCLE_RADIUS_DEVISOR, 300); // value to scale the circles, max radius of 300
-  leftCIrcleX = Math.max(window.innerWidth / 4, radius + 20); //20 pixels minimum from the side
+  leftCIrcleX = Math.max(window.innerWidth / (HIDE_SLIDERS ? 2 : 4), radius + 20); //20 pixels minimum from the side
   c.width = window.innerWidth;
   c.height = window.innerHeight;
   outputEl.style.left = leftCIrcleX * 2 + 'px';
@@ -421,6 +430,7 @@ function updateOutput() {
 var tests = [];
 var testNumber = 0;
 var activeTest = void 0;
+var _timeElapsed = performance.now();
 
 var OUTPUT_DATA = [];
 
@@ -437,6 +447,7 @@ function resetTest() {
 }
 
 function beginTest() {
+  _timeElapsed = performance.now();
   _paused = false;
   setTestTimings();
   getScreenSize();
@@ -501,8 +512,6 @@ function setTestTimings() {
     we measure elapsed time at the end to step through the timings
   */
 //***********
-
-var _timeElapsed = performance.now();
 
 function drawCanvas() {
   var now = performance.now();
@@ -698,7 +707,8 @@ window.loadConfig(function (err, res) {
   beginTest();
 });
 
-},{"./helpers":1}],3:[function(require,module,exports){
+}).call(this,require('_process'))
+},{"./helpers":1,"_process":10}],3:[function(require,module,exports){
 'use strict';
 var token = '%[a-f0-9]{2}';
 var singleMatcher = new RegExp(token, 'gi');
@@ -1057,7 +1067,193 @@ module.exports = function (headers) {
 
   return result
 }
-},{"for-each":4,"trim":12}],10:[function(require,module,exports){
+},{"for-each":4,"trim":13}],10:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],11:[function(require,module,exports){
 'use strict';
 var strictUriEncode = require('strict-uri-encode');
 var objectAssign = require('object-assign');
@@ -1283,7 +1479,7 @@ exports.parseUrl = function (str, opts) {
 	};
 };
 
-},{"decode-uri-component":3,"object-assign":8,"strict-uri-encode":11}],11:[function(require,module,exports){
+},{"decode-uri-component":3,"object-assign":8,"strict-uri-encode":12}],12:[function(require,module,exports){
 'use strict';
 module.exports = function (str) {
 	return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
@@ -1291,7 +1487,7 @@ module.exports = function (str) {
 	});
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 exports = module.exports = trim;
 
@@ -1307,7 +1503,7 @@ exports.right = function(str){
   return str.replace(/\s*$/, '');
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports = urlSetQuery
 function urlSetQuery (url, query) {
   if (query) {
@@ -1332,7 +1528,7 @@ function urlSetQuery (url, query) {
   return url
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var queryString = require('query-string')
 var setQuery = require('url-set-query')
 var assign = require('object-assign')
@@ -1393,7 +1589,7 @@ function xhrRequest (url, opt, cb) {
   return request(opt, cb)
 }
 
-},{"./lib/ensure-header.js":15,"./lib/request.js":17,"object-assign":8,"query-string":10,"url-set-query":13}],15:[function(require,module,exports){
+},{"./lib/ensure-header.js":16,"./lib/request.js":18,"object-assign":8,"query-string":11,"url-set-query":14}],16:[function(require,module,exports){
 module.exports = ensureHeader
 function ensureHeader (headers, key, value) {
   var lower = key.toLowerCase()
@@ -1402,7 +1598,7 @@ function ensureHeader (headers, key, value) {
   }
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports = getResponse
 function getResponse (opt, resp) {
   if (!resp) return null
@@ -1416,7 +1612,7 @@ function getResponse (opt, resp) {
   }
 }
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var xhr = require('xhr')
 var normalize = require('./normalize-response')
 var noop = function () {}
@@ -1460,7 +1656,7 @@ function xhrRequest (opt, cb) {
   return req
 }
 
-},{"./normalize-response":16,"xhr":18}],18:[function(require,module,exports){
+},{"./normalize-response":17,"xhr":19}],19:[function(require,module,exports){
 "use strict";
 var window = require("global/window")
 var isFunction = require("is-function")
@@ -1709,7 +1905,7 @@ function getXml(xhr) {
 
 function noop() {}
 
-},{"global/window":5,"is-function":7,"parse-headers":9,"xtend":19}],19:[function(require,module,exports){
+},{"global/window":5,"is-function":7,"parse-headers":9,"xtend":20}],20:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;

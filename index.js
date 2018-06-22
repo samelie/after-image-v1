@@ -7,6 +7,7 @@ var helpers = require('./helpers');
 //get output div by its class
 var outputDumpEl = document.querySelector('#output');
 outputDumpEl.style.display = 'none';
+var outputSlidersEl = document.querySelector('.output-sliders');
 var outputEl = document.querySelector('.output');
 var c = document.getElementById('myCanvas');
 c.width = window.innerWidth;
@@ -17,10 +18,12 @@ var ctx = c.getContext('2d');
 
 var testsEl = document.querySelector('.tests');
 testsEl.style.display = 'none';
+
 var testBtn = document.querySelector('.test-btn');
 testBtn.addEventListener('click', e => {
   testsEl.style.display = testsEl.style.display === 'block' ? 'none' : 'block';
 });
+
 const createTestButton = name => {
   const el = document.createElement('button');
   el.setAttribute('value', name);
@@ -33,6 +36,7 @@ const createTestButton = name => {
 /// MATCHING COLOR
 //**************
 
+var HIDE_SLIDERS = true;
 var USE_HSL = false;
 var SLIDER_START_VALUES = [
   USE_HSL ? 180 : Math.round(0.999 * 255),
@@ -43,6 +47,10 @@ var SLIDER_START_VALUES = [
 var UserColor = ColorLibrary([SLIDER_START_VALUES[0], SLIDER_START_VALUES[1], SLIDER_START_VALUES[2]]);
 if (USE_HSL) {
   UserColor = UserColor.toHSL();
+}
+
+if (HIDE_SLIDERS) {
+  outputSlidersEl.style.display = 'none';
 }
 
 //**************
@@ -212,7 +220,7 @@ var CIRCLE_RADIUS_DEVISOR = 3;
 
 function getScreenSize() {
   radius = Math.min(Math.min(window.innerWidth, window.innerHeight) / CIRCLE_RADIUS_DEVISOR, 300); // value to scale the circles, max radius of 300
-  leftCIrcleX = Math.max(window.innerWidth / 4, radius + 20); //20 pixels minimum from the side
+  leftCIrcleX = Math.max(window.innerWidth / (HIDE_SLIDERS ? 2 : 4), radius + 20); //20 pixels minimum from the side
   c.width = window.innerWidth;
   c.height = window.innerHeight;
   outputEl.style.left = leftCIrcleX * 2 + 'px';
@@ -281,31 +289,32 @@ function updateOutput() {
 let tests = [];
 let testNumber = 0;
 let activeTest;
+let _timeElapsed = performance.now();
 
-var OUTPUT_DATA = [];
+let OUTPUT_DATA = [];
 
 //***********
 // internal variables
 //***********
-var _paused = false;
-var _testIndex = 0;
-var _testSequence = [];
+let _paused = false;
+let _testIndex = 0;
+let _testSequence = [];
 
-
-function resetTest(){
+function resetTest() {
   _testSequence.length = 0;
   _testIndex = 0;
 }
 
-function beginTest(){
-  _paused = false
+function beginTest() {
+  _timeElapsed = performance.now();
+  _paused = false;
   setTestTimings();
   getScreenSize();
   drawCanvas();
 }
 
-function pauseTest(){
-  _paused = true
+function pauseTest() {
+  _paused = true;
 }
 
 //***********
@@ -363,17 +372,15 @@ function setTestTimings() {
   */
 //***********
 
-var _timeElapsed = performance.now();
-
 function drawCanvas() {
   var now = performance.now();
-  if(_paused) return
+  if (_paused) return;
   //check to see if completed, anc cancek out if so
   if (_testIndex > _testSequence.length - 1) {
     testCompleteEl.style.visibility = 'visible';
     outputItemsEl.style.visibility = 'visible';
-    resetTest()
-    pauseTest()
+    resetTest();
+    pauseTest();
     return;
   }
 
@@ -559,12 +566,12 @@ window.loadConfig((err, res) => {
   const btns = tests.map((_, i) => createTestButton(`test ${i + 1}`));
   btns.forEach((btn, i) =>
     btn.addEventListener('click', function(e) {
-      testNumber = i
+      testNumber = i;
       activeTest = tests[testNumber];
-      pauseTest()
-      resetTest()
-      beginTest()
+      pauseTest();
+      resetTest();
+      beginTest();
     }),
   );
-  beginTest()
+  beginTest();
 });
