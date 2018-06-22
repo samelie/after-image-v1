@@ -10,7 +10,7 @@
   },
   {
     "USE_HSL": false,
-    "STARE_DURATION": 10000,
+    "STARE_DURATION": 15000,
     "MATCH_DURATION": 5000,
     "RESET_DURATION": 7000,
     "WHITE": [200, 200, 200],
